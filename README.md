@@ -8,11 +8,13 @@ the recovery number and a calendar UI.
 
 | File | What it is |
 |------|------------|
-| `whoop-adapt.html` | Self-contained 3-screen demo web app. No server, no backend, no network calls — open it directly in any browser. |
+| `index.html` | Self-contained 3-screen demo web app. No server, no backend, no network calls — open it directly in any browser (also served live via GitHub Pages). |
 | `explanation_engine.py` | Standalone Python engine (library + CLI + optional HTTP server) implementing the same decision logic. |
 | `test_explanation_engine.py` | Pytest suite — the 4 canonical scenarios plus edge cases (13 tests). |
 
-## The demo app (`whoop-adapt.html`)
+## The demo app (`index.html`)
+
+**Live demo:** https://pratham15mi.github.io/whoop-adapt-hackachusetts/
 
 Dark, mobile-sized, WHOOP-style UI with three screens:
 
@@ -37,7 +39,7 @@ live. Just open the file in a browser; everything runs client-side.
 | `recovery < 60` **or** `sleep < 7` | `shorten_optional_workout` |
 | otherwise | `no_change` |
 
-The JS in `whoop-adapt.html` and the Python in `explanation_engine.py` use
+The JS in `index.html` and the Python in `explanation_engine.py` use
 identical thresholds and explanation strings.
 
 ## Verified scenarios
