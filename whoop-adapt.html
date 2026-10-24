@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WHOOP Adapt</title>
+<style>
+  :root {
+    --bg: #0a0d0f;
+    --surface: #14191c;
+    --surface-2: #1c2429;
+    --border: #273036;
+    --text: #e8eef0;
+    --text-dim: #8a979e;
+    --accent: #00e0a4;        /* WHOOP-style teal/green */
+    --accent-dim: #0a3b30;
+    --accent-text: #00f5b0;
+    --red: #ff5a5f;
+    --amber: #ffb020;
+    --fixed: #6b7a82;
+    --radius: 14px;
+    --shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: #000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  /* Phone frame */
+  .phone {
+    width: 390px;
+    max-width: 100%;
+    height: 800px;
+    max-height: 95vh;
+    background: var(--bg);
+    border-radius: 36px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .status-bar {
+    height: 30px;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 22px;
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.3px;
+  }
+  .status-bar .dot { color: var(--accent); }
+
+  /* Screens container */
+  .screens {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+  }
+  .screens::-webkit-scrollbar { width: 0; background: transparent; }
+
+  .screen { display: none; padding: 8px 18px 24px; animation: fade 0.25s ease; }
+  .screen.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .screen-title {
+    font-size: 26px;
+    font-weight: 700;
+    margin: 6px 0 2px;
+    letter-spacing: -0.5px;
+  }
+  .screen-sub { color: var(--text-dim); font-size: 13px; margin-bottom: 18px; }
+
+  /* Recovery card */
+  .recovery-card {
+    background: linear-gradient(145deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+  .recovery-card h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+  }
+  .metrics { display: flex; gap: 14px; }
+  .metric { flex: 1; }
+  .metric label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .metric .input-wrap { display: flex; align-items: baseline; gap: 4px; }
+  .metric input {
+    width: 72px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--accent-text);
+    font-size: 30px;
+    font-weight: 700;
+    padding: 6px 10px;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .metric input:focus { border-color: var(--accent); }
+  .metric .unit { font-size: 16px; color: var(--text-dim); font-weight: 600; }
+
+  .ring {
+    width: 54px; height: 54px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 15px; font-weight: 700;
+    border: 4px solid var(--accent);
+    color: var(--accent-text);
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  /* Section label */
+  .section-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin: 4px 0 12px;
+    font-weight: 600;
+  }
+
+  /* Event list */
+  .event {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 14px;
+    margin-bottom: 10px;
+  }
+  .event .ico {
+    width: 34px; height: 34px; flex: 0 0 auto;
+    border-radius: 9px;
+    display: grid; place-items: center;
+    font-size: 15px;
+  }
+  .event .ico.fixed { background: #222b30; color: var(--fixed); }
+  .event .ico.flex  { background: var(--accent-dim); color: var(--accent-text); }
+  .event .body { flex: 1 1 auto; min-width: 0; }
+  .event .name { font-size: 15px; font-weight: 600; }
+  .event .time { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 4px 9px;
+    border-radius: 20px;
+    flex: 0 0 auto;
+  }
+  .tag.fixed { background: #222b30; color: var(--fixed); }
+  .tag.flex  { background: var(--accent-dim); color: var(--accent-text); }
+
+  /* Form elements (Screen 2) */
+  .field { margin-bottom: 16px; }
+  .field > label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 7px;
+    color: var(--text);
+  }
+  .field input[type="text"],
+  .field input[type="number"],
+  .field select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 15px;
+    padding: 12px 14px;
+    outline: none;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+
+  .select-event {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .select-event .evt-ico {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--accent-dim); color: var(--accent-text);
+    display: grid; place-items: center; font-size: 18px; flex: 0 0 auto;
+  }
+  .select-event .evt-info { flex: 1; }
+  .select-event .evt-info .t { font-size: 15px; font-weight: 700; }
+  .select-event .evt-info .s { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 20px;
+  }
+  .toggle-row .lbl { font-size: 14px; font-weight: 600; }
+  .toggle-row .lbl span { display: block; font-size: 12px; color: var(--text-dim); font-weight: 400; margin-top: 2px; }
+  .switch { position: relative; width: 52px; height: 30px; flex: 0 0 auto; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; inset: 0; cursor: pointer;
+    background: #2a343a; border-radius: 30px; transition: 0.2s;
+  }
+  .slider:before {
+    content: ""; position: absolute; height: 22px; width: 22px;
+    left: 4px; bottom: 4px; background: #fff; border-radius: 50%; transition: 0.2s;
+  }
+  .switch input:checked + .slider { background: var(--accent); }
+  .switch input:checked + .slider:before { transform: translateX(22px); }
+
+  .two-col { display: flex; gap: 12px; }
+  .two-col .field { flex: 1; }
+
+  /* Buttons */
+  .btn {
+    display: block; width: 100%;
+    border: none; border-radius: 12px;
+    font-size: 16px; font-weight: 700;
+    padding: 15px; cursor: pointer;
+    transition: transform 0.08s, filter 0.15s;
+    margin-top: 6px;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: #042a21; }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-secondary {
+    background: transparent; color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--surface); }
+
+  /* Screen 3 result banner */
+  .result-banner {
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .result-banner .action-name {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 8px;
+  }
+  .result-banner .expl { font-size: 15px; line-height: 1.45; }
+  .result-banner.ok     { border-color: #2a4d3f; }
+  .result-banner.ok .action-name { color: var(--accent-text); }
+  .result-banner.warn   { border-color: #5a4a1e; }
+  .result-banner.warn .action-name { color: var(--amber); }
+  .result-banner.alert  { border-color: #5a2a2e; }
+  .result-banner.alert .action-name { color: var(--red); }
+
+  /* Change cards */
+  .change-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .change-card.locked { border-left-color: var(--fixed); }
+  .change-card .ch-head {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  }
+  .change-card .ch-title { font-size: 15px; font-weight: 700; flex: 1; }
+  .change-card .ch-expl { font-size: 13px; color: var(--text-dim); line-height: 1.45; }
+  .pill {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; padding: 3px 8px; border-radius: 20px;
+  }
+  .pill.flex   { background: var(--accent-dim); color: var(--accent-text); }
+  .pill.locked { background: #222b30; color: var(--fixed); }
+
+  .empty-hint {
+    text-align: center; color: var(--text-dim); font-size: 13px;
+    padding: 30px 10px; line-height: 1.5;
+  }
+
+  /* Bottom nav */
+  .nav {
+    flex: 0 0 auto;
+    display: flex;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .nav button {
+    flex: 1; background: none; border: none; cursor: pointer;
+    padding: 12px 0 16px; color: var(--text-dim);
+    font-size: 11px; font-weight: 600;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    transition: color 0.15s;
+  }
+  .nav button .nav-ico { font-size: 20px; line-height: 1; }
+  .nav button.active { color: var(--accent); }
+
+  .toast {
+    position: absolute; bottom: 82px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--accent); color: #042a21;
+    font-weight: 700; font-size: 14px;
+    padding: 12px 22px; border-radius: 30px;
+    opacity: 0; pointer-events: none; transition: 0.3s;
+    white-space: nowrap; box-shadow: var(--shadow);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar">
+    <span id="clock">9:41</span>
+    <span><span class="dot">●</span> WHOOP Adapt</span>
+    <span>100%</span>
+  </div>
+
+  <div class="screens">
+
+    <!-- ============ SCREEN 1: YOUR DAY ============ -->
+    <section class="screen active" id="screen-today">
+      <div class="screen-title">Your Day</div>
+      <div class="screen-sub" id="today-date">—</div>
+
+      <div class="recovery-card">
+        <h3>Today's Recovery</h3>
+        <div class="metrics">
+          <div class="metric">
+            <label>Recovery</label>
+            <div class="input-wrap">
+              <input type="number" id="recovery" value="75" min="0" max="100" />
+              <span class="unit">%</span>
+            </div>
+          </div>
+          <div class="metric">
+            <label>Sleep</label>
+            <div class="input-wrap">
+              <input type="number" id="sleep" value="8" min="0" max="24" step="0.5" />
+              <span class="unit">h</span>
+            </div>
+          </div>
+          <div class="metric" style="flex:0 0 auto; align-self:flex-end;">
+            <div class="ring" id="recovery-ring">75%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Today's Schedule</div>
+      <div id="event-list"></div>
+    </section>
+
+    <!-- ============ SCREEN 2: PROTECT TOMORROW ============ -->
+    <section class="screen" id="screen-plan">
+      <div class="screen-title">Protect Tomorrow</div>
+      <div class="screen-sub">Secure what matters most for tomorrow.</div>
+
+      <div class="section-label">Important Event</div>
+      <div class="select-event">
+        <div class="evt-ico">★</div>
+        <div class="evt-info">
+          <div class="t">Exam</div>
+          <div class="s">Tomorrow 09:30</div>
+        </div>
+        <div class="tag flex">Marked</div>
+      </div>
+
+      <div class="two-col">
+        <div class="field">
+          <label>Travel + arrival buffer</label>
+          <input type="number" id="buffer" value="45" min="0" /> 
+        </div>
+        <div class="field">
+          <label>Morning routine</label>
+          <input type="number" id="routine" value="30" min="0" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Time in bed goal (hours)</label>
+        <input type="number" id="bedgoal" value="8" min="0" max="12" step="0.5" />
+      </div>
+
+      <div class="toggle-row">
+        <div class="lbl">Exam flag
+          <span>Prioritize sleep before a high-stakes event</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="examFlag" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <button class="btn btn-primary" id="buildBtn">Build proposed plan</button>
+    </section>
+
+    <!-- ============ SCREEN 3: REVIEW YOUR PLAN ============ -->
+    <section class="screen" id="screen-changes">
+      <div class="screen-title">Review your plan</div>
+      <div class="screen-sub" id="review-inputs">—</div>
+
+      <div id="result-area">
+        <div class="empty-hint">
+          No plan yet.<br />
+          Go to <strong>Plan</strong> and tap “Build proposed plan”.
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="toast" id="toast">Changes approved ✓</div>
+
+  <!-- ============ BOTTOM NAV ============ -->
+  <nav class="nav">
+    <button data-screen="screen-today" class="active">
+      <span class="nav-ico">☀</span> Today
+    </button>
+    <button data-screen="screen-plan">
+      <span class="nav-ico">🛡</span> Plan
+    </button>
+    <button data-screen="screen-changes">
+      <span class="nav-ico">↻</span> Changes
+    </button>
+  </nav>
+</div>
+
+<script>
+/* =========================================================================
+   CORE DECISION LOGIC  (fully client-side, no network / no server)
+   Mirrors the standalone explanation_engine.py — identical thresholds
+   and explanation strings, so Bailey's UI stays consistent with Gui's engine.
+   ========================================================================= */
+function explainDecision(recoveryPercent, sleepHours, examFlag) {
+  if (examFlag && (recoveryPercent < 60 || sleepHours < 7)) {
+    return {
+      action: "protect_tomorrow",
+      explanation: "Protect Tomorrow activated: reshuffling your schedule to secure sleep before your exam."
+    };
+  }
+  if (recoveryPercent < 40 || sleepHours < 5.5) {
+    return {
+      action: "protect_sleep_window",
+      explanation: "Protecting your 8-hour sleep window tonight — moving admin tasks to a free slot tomorrow."
+    };
+  }
+  if (recoveryPercent < 60 || sleepHours < 7) {
+    return {
+      action: "shorten_optional_workout",
+      explanation: "Shortening your optional workout by 30 min to protect recovery."
+    };
+  }
+  return {
+    action: "no_change",
+    explanation: "No changes needed. Your recovery and sleep support your current plan."
+  };
+}
+
+/* =========================================================================
+   SAMPLE DATA
+   ========================================================================= */
+const EVENTS = [
+  { name: "Classes",     time: "09:00 – 12:00", type: "fixed" },
+  { name: "Lab",         time: "13:00 – 15:00", type: "fixed" },
+  { name: "Workout",     time: "17:00 – 18:30", type: "flex"  },
+  { name: "Exam review", time: "19:00 – 21:00", type: "flex"  },
+  { name: "Admin tasks", time: "21:00 – 22:00", type: "flex"  },
+];
+
+/* =========================================================================
+   SCREEN 1 RENDERING
+   ========================================================================= */
+function renderDate() {
+  const d = new Date();
+  const opts = { weekday: "long", month: "long", day: "numeric", year: "numeric" };
+  document.getElementById("today-date").textContent = d.toLocaleDateString(undefined, opts);
+}
+
+function renderEvents() {
+  const list = document.getElementById("event-list");
+  list.innerHTML = "";
+  EVENTS.forEach(ev => {
+    const isFixed = ev.type === "fixed";
+    const el = document.createElement("div");
+    el.className = "event";
+    el.innerHTML = `
+      <div class="ico ${isFixed ? "fixed" : "flex"}">${isFixed ? "🔒" : "↕"}</div>
+      <div class="body">
+        <div class="name">${ev.name}</div>
+        <div class="time">${ev.time}</div>
+      </div>
+      <span class="tag ${isFixed ? "fixed" : "flex"}">${isFixed ? "Fixed" : "Flexible"}</span>
+    `;
+    list.appendChild(el);
+  });
+}
+
+function updateRing() {
+  const rec = clampNum(document.getElementById("recovery").value, 0, 100, 0);
+  const ring = document.getElementById("recovery-ring");
+  ring.textContent = rec + "%";
+  let color = "var(--accent)";
+  if (rec < 40) color = "var(--red)";
+  else if (rec < 60) color = "var(--amber)";
+  ring.style.borderColor = color;
+  ring.style.color = color;
+}
+
+function clampNum(v, min, max, fallback) {
+  let n = parseFloat(v);
+  if (isNaN(n)) n = fallback;
+  return Math.max(min, Math.min(max, n));
+}
+
+/* =========================================================================
+   SCREEN 3 — build & render the proposed plan
+   ========================================================================= */
+function actionMeta(action) {
+  switch (action) {
+    case "no_change":                return { tone: "ok",    label: "No change" };
+    case "shorten_optional_workout": return { tone: "warn",  label: "Shorten workout" };
+    case "protect_sleep_window":     return { tone: "alert", label: "Protect sleep window" };
+    case "protect_tomorrow":         return { tone: "alert", label: "Protect Tomorrow" };
+    default:                         return { tone: "ok",    label: action };
+  }
+}
+
+/* Build the list of per-event change cards for a given action. */
+function changeCardsFor(action) {
+  // Fixed events always render as locked/unchangeable context.
+  const locked = [
+    { title: "Classes — 09:00–12:00", expl: "Fixed commitment. Left exactly as scheduled.", locked: true },
+    { title: "Lab — 13:00–15:00",     expl: "Fixed commitment. Left exactly as scheduled.", locked: true },
+  ];
+
+  let flexible = [];
+  if (action === "no_change") {
+    flexible = [
+      { title: "Workout — 17:00–18:30", expl: "Kept as planned. Recovery supports full session.", locked: false },
+      { title: "Exam review — 19:00–21:00", expl: "Kept as planned.", locked: false },
+      { title: "Admin tasks — 21:00–22:00", expl: "Kept as planned.", locked: false },
+    ];
+  } else if (action === "shorten_optional_workout") {
+    flexible = [
+      { title: "Workout — shortened to 17:00–18:00", expl: "Trimmed by 30 min to protect recovery.", locked: false },
+      { title: "Exam review — 19:00–21:00", expl: "Kept as planned.", locked: false },
+      { title: "Admin tasks — 21:00–22:00", expl: "Kept as planned.", locked: false },
+    ];
+  } else if (action === "protect_sleep_window") {
+    flexible = [
+      { title: "Workout — 17:00–18:30", expl: "Kept short; main priority is tonight's sleep.", locked: false },
+      { title: "Admin tasks — moved to tomorrow", expl: "Relocated to a free slot tomorrow to protect your 8-hour sleep window.", locked: false },
+    ];
+  } else if (action === "protect_tomorrow") {
+    flexible = [
+      { title: "Workout — moved earlier / shortened", expl: "Cleared from the evening to free up wind-down time.", locked: false },
+      { title: "Exam review — 19:00–20:30", expl: "Capped so you can start sleep on time.", locked: false },
+      { title: "Admin tasks — moved to tomorrow", expl: "Relocated to secure sleep before your 09:30 exam.", locked: false },
+    ];
+  }
+  return locked.concat(flexible);
+}
+
+function buildPlan() {
+  const rec = clampNum(document.getElementById("recovery").value, 0, 100, 75);
+  const slp = clampNum(document.getElementById("sleep").value, 0, 24, 8);
+  const exam = document.getElementById("examFlag").checked;
+
+  const result = explainDecision(rec, slp, exam);
+  const meta = actionMeta(result.action);
+
+  const area = document.getElementById("result-area");
+  document.getElementById("review-inputs").textContent =
+    `Based on ${rec}% recovery, ${slp}h sleep` + (exam ? ", exam flagged" : "");
+
+  let html = `
+    <div class="result-banner ${meta.tone}">
+      <div class="action-name">${meta.label}</div>
+      <div class="expl">${result.explanation}</div>
+    </div>
+    <div class="section-label">Suggested changes</div>
+  `;
+
+  changeCardsFor(result.action).forEach(c => {
+    html += `
+      <div class="change-card ${c.locked ? "locked" : ""}">
+        <div class="ch-head">
+          <span>${c.locked ? "🔒" : "↕"}</span>
+          <span class="ch-title">${c.title}</span>
+          <span class="pill ${c.locked ? "locked" : "flex"}">${c.locked ? "Fixed" : "Flexible"}</span>
+        </div>
+        <div class="ch-expl">${c.expl}</div>
+      </div>
+    `;
+  });
+
+  html += `
+    <button class="btn btn-primary" id="approveBtn" style="margin-top:16px;">Approve changes</button>
+    <button class="btn btn-secondary" id="editBtn">Edit proposal</button>
+  `;
+
+  area.innerHTML = html;
+  document.getElementById("approveBtn").addEventListener("click", () => showToast("Changes approved ✓"));
+  document.getElementById("editBtn").addEventListener("click", () => switchScreen("screen-plan"));
+}
+
+/* =========================================================================
+   NAVIGATION + MISC
+   ========================================================================= */
+function switchScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === id));
+  document.querySelectorAll(".nav button").forEach(b =>
+    b.classList.toggle("active", b.dataset.screen === id));
+  document.querySelector(".screens").scrollTop = 0;
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+/* =========================================================================
+   WIRE-UP
+   ========================================================================= */
+document.querySelectorAll(".nav button").forEach(btn => {
+  btn.addEventListener("click", () => switchScreen(btn.dataset.screen));
+});
+document.getElementById("recovery").addEventListener("input", updateRing);
+document.getElementById("buildBtn").addEventListener("click", () => {
+  buildPlan();
+  switchScreen("screen-changes");
+});
+
+/* Live clock in the status bar */
+function tickClock() {
+  const d = new Date();
+  const h = d.getHours(), m = String(d.getMinutes()).padStart(2, "0");
+  document.getElementById("clock").textContent = `${h}:${m}`;
+}
+
+renderDate();
+renderEvents();
+updateRing();
+tickClock();
+setInterval(tickClock, 10000);
+
+/* =========================================================================
+   SELF-TEST — runs the 4 required scenarios on load and logs to console.
+   (Does not affect the UI; purely a correctness guard for the demo.)
+   ========================================================================= */
+(function selfTest() {
+  const cases = [
+    { r: 75, s: 8,   e: false, want: "no_change" },
+    { r: 55, s: 6,   e: false, want: "shorten_optional_workout" },
+    { r: 30, s: 4.5, e: false, want: "protect_sleep_window" },
+    { r: 35, s: 5,   e: true,  want: "protect_tomorrow" },
+  ];
+  let allPass = true;
+  cases.forEach(c => {
+    const got = explainDecision(c.r, c.s, c.e).action;
+    const pass = got === c.want;
+    if (!pass) allPass = false;
+    console.log(
+      `%c[${pass ? "PASS" : "FAIL"}] ${c.r}% / ${c.s}h / exam=${c.e} → ${got} (want ${c.want})`,
+      `color:${pass ? "#00e0a4" : "#ff5a5f"}`
+    );
+  });
+  console.log(allPass
+    ? "%cAll 4 WHOOP Adapt scenarios passed ✓"
+    : "%cSELF-TEST FAILED ✗",
+    `color:${allPass ? "#00e0a4" : "#ff5a5f"};font-weight:bold`);
+})();
+</script>
+</body>
+</html>
